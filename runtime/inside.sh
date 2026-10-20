@@ -32,11 +32,24 @@ find "$RT/lib" -name '*.so' -delete
 # bash + python
 cp -L /bin/bash "$RT/bin/bash"
 PYV="$(python3 -c 'import sys;print("%d.%d" % sys.version_info[:2])')"
-cp -L "/usr/bin/python$PYV" "$RT/bin/python3"
-cp -L "/usr/bin/python$PYV" "$RT/bin/python"
+cp -L "/usr/bin/python$PYV" "$RT/bin/python3.bin"
+# python runs through a wrapper that preloads the SIGSYS shim (only glibc processes may see it;
+# Android's own /system/bin tools would refuse a glibc LD_PRELOAD).
+for w in python3 python; do
+  cat > "$RT/bin/$w" <<'WRAP'
+#!/system/bin/sh
+d="${0%/*}"
+LD_PRELOAD="$d/../lib/libpfsys.so" exec "$d/python3.bin" "$@"
+WRAP
+done
 cp -a "/usr/lib/python$PYV" "$RT/py/lib/"
 rm -rf "$RT/py/lib/python$PYV/"{test,idlelib,tkinter,ensurepip,lib2to3,turtledemo}
 ldd --version 2>/dev/null | sed -n 1p || true
+
+# SIGSYS shim (built after the lib copy so gcc's own libs don't bloat the runtime)
+apt-get install -y -qq --no-install-recommends gcc libc6-dev >/dev/null
+gcc -O2 -shared -fPIC -o "$RT/lib/libpfsys.so" /src/pfsys.c
+ls -l "$RT/lib/libpfsys.so"
 
 # arduino-cli (statically linked Go binary)
 curl -fsSL https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_ARM64.tar.gz \
