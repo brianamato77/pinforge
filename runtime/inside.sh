@@ -36,7 +36,7 @@ cp -L "/usr/bin/python$PYV" "$RT/bin/python3"
 cp -L "/usr/bin/python$PYV" "$RT/bin/python"
 cp -a "/usr/lib/python$PYV" "$RT/py/lib/"
 rm -rf "$RT/py/lib/python$PYV/"{test,idlelib,tkinter,ensurepip,lib2to3,turtledemo}
-ldd --version | head -1
+ldd --version 2>/dev/null | sed -n 1p || true
 
 # arduino-cli (statically linked Go binary)
 curl -fsSL https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_ARM64.tar.gz \
