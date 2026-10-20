@@ -8,13 +8,11 @@
 # On the phone the app rewrites each ELF's interpreter to /data/data/io.pinforge/l.
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
-# Bullseye is EOL: fall back to archive.debian.org when the live mirrors drop it.
-if ! apt-get update -qq; then
-  echo "deb http://archive.debian.org/debian bullseye main" > /etc/apt/sources.list
-  echo "deb http://archive.debian.org/debian-security bullseye-security main" >> /etc/apt/sources.list
-  rm -f /etc/apt/sources.list.d/*
-  apt-get -o Acquire::Check-Valid-Until=false update -qq
-fi
+# Bullseye is EOL: its packages live on archive.debian.org now.
+echo "deb http://archive.debian.org/debian bullseye main" > /etc/apt/sources.list
+echo "deb http://archive.debian.org/debian-security bullseye-security main" >> /etc/apt/sources.list
+rm -f /etc/apt/sources.list.d/*
+apt-get -o Acquire::Check-Valid-Until=false update -qq
 apt-get install -y -qq --no-install-recommends \
   bash python3-minimal libpython3-stdlib ca-certificates curl \
   libstdc++6 libgcc-s1 zlib1g libzstd1 liblzma5 libbz2-1.0 libexpat1 \
