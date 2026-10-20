@@ -1,0 +1,67 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  runtime:
+    # Builds the on-phone Linux runtime (glibc, bash, python3, arduino-cli) for arm64
+    # and publishes it as the "runtime" release. Rebuilt only when runtime/VERSION changes.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check existing runtime release
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          want="$(cat runtime/VERSION)"
+          have="$(gh release view runtime --repo "$GITHUB_REPOSITORY" --json body -q .body 2>/dev/null || true)"
+          if [ "$want" = "$have" ]; then echo "skip=true" >> "$GITHUB_OUTPUT"; else echo "skip=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: docker/setup-qemu-action@v3
+        if: steps.check.outputs.skip != 'true'
+        with:
+          platforms: arm64
+      - name: Build runtime
+        if: steps.check.outputs.skip != 'true'
+        run: bash runtime/build-runtime.sh
+      - name: Publish runtime release
+        if: steps.check.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete runtime --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
+          gh release create runtime out/runtime-aarch64.tar.gz --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" --title "Toolchain runtime" --notes "$(cat runtime/VERSION)" --prerelease
+
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+      - name: Build APK
+        run: gradle :app:assembleRelease --stacktrace --no-daemon
+      - name: Rename
+        run: cp app/build/outputs/apk/release/app-release.apk PinForge.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PinForge-apk
+          path: PinForge.apk
+      - name: Publish APK release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
+          gh release create latest PinForge.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "PinForge build ${GITHUB_RUN_NUMBER}" --notes "Built from ${GITHUB_SHA::7}. Download PinForge.apk on your phone and install."

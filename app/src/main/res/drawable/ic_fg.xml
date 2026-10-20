@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A chip with pins and one teal trace leaving it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#1F2630" android:strokeColor="#4FD1C5" android:strokeWidth="3"
+        android:pathData="M38,38h32v32h-32z" />
+    <path android:fillColor="#4FD1C5"
+        android:pathData="M42,30h4v8h-4zM52,30h4v8h-4zM62,30h4v8h-4zM42,70h4v8h-4zM52,70h4v8h-4zM62,70h4v8h-4zM30,42h8v4h-8zM30,52h8v4h-8zM30,62h8v4h-8zM70,42h8v4h-8zM70,52h8v4h-8zM70,62h8v4h-8z" />
+    <path android:fillColor="#F6AD55" android:pathData="M48,48h12v12h-12z" />
+</vector>
