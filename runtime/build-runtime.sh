@@ -6,5 +6,5 @@ out="$(pwd)/out"
 mkdir -p "$out"
 docker run --rm --platform linux/arm64 \
   -v "$here:/src:ro" -v "$out:/out" \
-  debian:bookworm-slim bash /src/inside.sh
+  debian:bullseye-slim bash /src/inside.sh
 ls -lh "$out"

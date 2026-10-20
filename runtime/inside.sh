@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Runs inside debian:bookworm-slim (arm64). Produces /out/runtime-aarch64.tar.gz with:
+# Runs inside debian:bullseye-slim (arm64). glibc 2.31 is used on purpose: newer glibc
+# (2.34+) calls clone3/rseq/faccessat2 at startup, which Android's app seccomp kills (SIGSYS).
+# Produces /out/runtime-aarch64.tar.gz with:
 #   bin/  arduino-cli (static Go), bash, python3, shims
 #   lib/  glibc + shared libs the toolchains need (ld-linux-aarch64.so.1 is the loader)
 #   py/   python stdlib (PYTHONHOME)
@@ -8,9 +10,9 @@ set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 apt-get install -y -qq --no-install-recommends \
-  bash python3-minimal libpython3.11-stdlib ca-certificates curl \
+  bash python3-minimal libpython3-stdlib ca-certificates curl \
   libstdc++6 libgcc-s1 zlib1g libzstd1 liblzma5 libbz2-1.0 libexpat1 \
-  libncursesw6 libtinfo6 libffi8 libssl3 libusb-1.0-0 libudev1 libuuid1 >/dev/null
+  libncursesw6 libtinfo6 libffi7 libssl1.1 libusb-1.0-0 libudev1 libuuid1 >/dev/null
 
 RT=/tmp/rt
 mkdir -p "$RT/bin" "$RT/lib" "$RT/py/lib"
@@ -25,10 +27,12 @@ find "$RT/lib" -name '*.so' -delete
 
 # bash + python
 cp -L /bin/bash "$RT/bin/bash"
-cp -L /usr/bin/python3.11 "$RT/bin/python3"
-cp -L /usr/bin/python3.11 "$RT/bin/python"
-cp -a /usr/lib/python3.11 "$RT/py/lib/"
-rm -rf "$RT/py/lib/python3.11/"{test,idlelib,tkinter,ensurepip,lib2to3,turtledemo}
+PYV="$(python3 -c 'import sys;print("%d.%d" % sys.version_info[:2])')"
+cp -L "/usr/bin/python$PYV" "$RT/bin/python3"
+cp -L "/usr/bin/python$PYV" "$RT/bin/python"
+cp -a "/usr/lib/python$PYV" "$RT/py/lib/"
+rm -rf "$RT/py/lib/python$PYV/"{test,idlelib,tkinter,ensurepip,lib2to3,turtledemo}
+ldd --version | head -1
 
 # arduino-cli (statically linked Go binary)
 curl -fsSL https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_ARM64.tar.gz \

@@ -99,6 +99,8 @@ class Runtime(private val ctx: Context) {
         e["PYTHONDONTWRITEBYTECODE"] = "1"
         e["SSL_CERT_DIR"] = "/apex/com.android.conscrypt/cacerts:/system/etc/security/cacerts"
         e["LC_ALL"] = "C"
+        // Belt-and-braces: never register rseq (blocked by Android seccomp on many versions).
+        e["GLIBC_TUNABLES"] = "glibc.pthread.rseq=0"
         e["TERM"] = "dumb"
         e["ARDUINO_UPDATER_ENABLE_NOTIFICATION"] = "false"
     }
