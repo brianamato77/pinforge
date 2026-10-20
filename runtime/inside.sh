@@ -32,14 +32,14 @@ find "$RT/lib" -name '*.so' -delete
 # bash + python
 cp -L /bin/bash "$RT/bin/bash"
 PYV="$(python3 -c 'import sys;print("%d.%d" % sys.version_info[:2])')"
-cp -L "/usr/bin/python$PYV" "$RT/bin/python3.bin"
+cp -L "/usr/bin/python$PYV" "$RT/bin/python3-real"
 # python runs through a wrapper that preloads the SIGSYS shim (only glibc processes may see it;
 # Android's own /system/bin tools would refuse a glibc LD_PRELOAD).
 for w in python3 python; do
   cat > "$RT/bin/$w" <<'WRAP'
 #!/system/bin/sh
 d="${0%/*}"
-LD_PRELOAD="$d/../lib/libpfsys.so" exec "$d/python3.bin" "$@"
+LD_PRELOAD="$d/../lib/libpfsys.so" exec "$d/python3-real" "$@"
 WRAP
 done
 cp -a "/usr/lib/python$PYV" "$RT/py/lib/"
